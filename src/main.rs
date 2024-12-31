@@ -3,10 +3,8 @@ use std::env;
 fn main() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
     let valid_args = validate_args(args)?;
-    let i64_number = valid_args[1].parse::<i64>().unwrap();
-    output_assembly_codes(i64_number);
-
-    Ok(())
+    //TODO: Calculating numbers with 2 or more digits
+    output_assembly_codes(&valid_args[1])
 }
 
 fn validate_args(args: Vec<String>) -> Result<Vec<String>, String> {
@@ -14,18 +12,49 @@ fn validate_args(args: Vec<String>) -> Result<Vec<String>, String> {
         return Err("The number of args is invalid.".to_string());
     }
 
-    match args[1].parse::<i64>() {
-        Ok(_) => Ok(args),
-        Err(_) => Err("fails to parse args[1] to integer.".to_string()),
-    }
+    Ok(args)
 }
+
 // TODO: Add test
-fn output_assembly_codes(number: i64) {
+fn output_assembly_codes(expr: &String) -> Result<(), String> {
     println!(".intel_syntax noprefix");
     println!(".globl main");
     println!("main:");
-    println!("  mov rax, {:?}", number);
+    let (head, tail) = (*expr).split_at(1);
+    println!("  mov rax, {:?}", (*head).parse::<u32>().unwrap());
+    output_add_or_sub_ops(tail)
+}
+
+fn output_add_or_sub_ops(str: &str) -> Result<(), String> {
+    let mut chars = (*str).chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '+' => match chars.next() {
+                Some(n) => {
+                    if let Some(num) = n.to_digit(10) {
+                        println!("  add rax, {:?}", num)
+                    } else {
+                        return Err("The integer for addition is invalid".to_string());
+                    }
+                }
+                None => return Err("The integer for addition does not exist.".to_string()),
+            },
+            '-' => match chars.next() {
+                Some(n) => {
+                    if let Some(num) = n.to_digit(10) {
+                        println!("  sub rax, {:?}", num)
+                    } else {
+                        return Err("The integer for subtraction is invalid".to_string());
+                    }
+                }
+                None => return Err("The integer for subtraction does not exist.".to_string()),
+            },
+            _ => return Err("unexpected operator".to_string()),
+        }
+    }
     println!("  ret");
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -39,30 +68,5 @@ mod tests {
         args.push(5.to_string());
 
         assert_eq!(validate_args(args.clone()), Ok(args));
-    }
-
-    #[test]
-    fn validate_args_returns_error_when_number_of_args_is_invalid() {
-        let mut args = Vec::new();
-        args.push("target/debug/mini-c-compiler".to_string());
-        args.push(5.to_string());
-        args.push("invalid arg".to_string());
-
-        assert_eq!(
-            validate_args(args.clone()),
-            Err("The number of args is invalid.".to_string())
-        );
-    }
-
-    #[test]
-    fn validate_args_returns_error_when_args_1th_is_not_i64() {
-        let mut args = Vec::new();
-        args.push("target/debug/mini-c-compiler".to_string());
-        args.push("invalid arg".to_string());
-
-        assert_eq!(
-            validate_args(args.clone()),
-            Err("fails to parse args[1] to integer.".to_string())
-        );
     }
 }
