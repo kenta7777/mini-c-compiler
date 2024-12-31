@@ -19,7 +19,7 @@ fn validate_args(args: Vec<String>) -> Result<Vec<String>, String> {
         Err(_) => Err("fails to parse args[1] to integer.".to_string()),
     }
 }
-
+// TODO: Add test
 fn output_assembly_codes(number: i64) {
     println!(".intel_syntax noprefix");
     println!(".globl main");
