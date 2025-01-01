@@ -1,9 +1,8 @@
-use std::env;
+use std::{char, env};
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
     let valid_args = validate_args(args)?;
-    //TODO: Calculating numbers with 2 or more digits
     output_assembly_codes(&valid_args[1])
 }
 
@@ -26,29 +25,37 @@ fn output_assembly_codes(expr: &String) -> Result<(), String> {
 }
 
 fn output_add_or_sub_ops(str: &str) -> Result<(), String> {
-    let mut chars = (*str).chars();
-    while let Some(c) = chars.next() {
+    let mut chars = (*str).chars().peekable();
+    while let Some(&c) = chars.peek() {
         match c {
-            '+' => match chars.next() {
-                Some(n) => {
-                    if let Some(num) = n.to_digit(10) {
-                        println!("  add rax, {:?}", num)
+            '+' => {
+                chars.next();
+                let mut num_char_vec: Vec<char> = Vec::new();
+                while let Some(&num_char) = chars.peek() {
+                    if let Some(_) = num_char.to_digit(10) {
+                        chars.next();
+                        num_char_vec.push(num_char);
                     } else {
-                        return Err("The integer for addition is invalid".to_string());
+                        break;
                     }
                 }
-                None => return Err("The integer for addition does not exist.".to_string()),
-            },
-            '-' => match chars.next() {
-                Some(n) => {
-                    if let Some(num) = n.to_digit(10) {
-                        println!("  sub rax, {:?}", num)
+                let num = num_char_vec.iter().collect::<String>();
+                println!("  add rax, {:?}", num.parse::<u32>().unwrap());
+            }
+            '-' => {
+                chars.next();
+                let mut num_char_vec: Vec<char> = Vec::new();
+                while let Some(&num_char) = chars.peek() {
+                    if let Some(_) = num_char.to_digit(10) {
+                        chars.next();
+                        num_char_vec.push(num_char);
                     } else {
-                        return Err("The integer for subtraction is invalid".to_string());
+                        break;
                     }
                 }
-                None => return Err("The integer for subtraction does not exist.".to_string()),
-            },
+                let num = num_char_vec.iter().collect::<String>();
+                println!("  sub rax, {:?}", num.parse::<u32>().unwrap());
+            }
             _ => return Err("unexpected operator".to_string()),
         }
     }
