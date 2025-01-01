@@ -15,24 +15,34 @@ fn validate_args(args: Vec<String>) -> Result<Vec<String>, String> {
 }
 
 // TODO: Add test
-fn output_assembly_codes(expr: &String) -> Result<(), String> {
+fn output_assembly_codes(input: &str) -> Result<(), String> {
     println!(".intel_syntax noprefix");
     println!(".globl main");
     println!("main:");
-    let (head, tail) = (*expr).split_at(1);
-    println!("  mov rax, {:?}", (*head).parse::<u32>().unwrap());
-    output_add_or_sub_ops(tail)
+    output_add_or_sub_codes(input)
 }
 
-fn output_add_or_sub_ops(str: &str) -> Result<(), String> {
-    let mut chars = (*str).chars().peekable();
+fn output_add_or_sub_codes(input: &str) -> Result<(), String> {
+    let mut char_vec: Vec<char> = Vec::new();
+    let mut chars = (*input).chars().peekable();
+    while let Some(&c) = chars.peek() {
+        if c.is_ascii_digit() {
+            chars.next();
+            char_vec.push(c);
+        } else {
+            break;
+        }
+    }
+    let num = char_vec.iter().collect::<String>();
+    println!("  mov rax, {:?}", (*num).parse::<u32>().unwrap());
+
     while let Some(&c) = chars.peek() {
         match c {
             '+' => {
                 chars.next();
                 let mut num_char_vec: Vec<char> = Vec::new();
                 while let Some(&num_char) = chars.peek() {
-                    if let Some(_) = num_char.to_digit(10) {
+                    if num_char.is_ascii_digit() {
                         chars.next();
                         num_char_vec.push(num_char);
                     } else {
@@ -46,7 +56,7 @@ fn output_add_or_sub_ops(str: &str) -> Result<(), String> {
                 chars.next();
                 let mut num_char_vec: Vec<char> = Vec::new();
                 while let Some(&num_char) = chars.peek() {
-                    if let Some(_) = num_char.to_digit(10) {
+                    if num_char.is_ascii_digit() {
                         chars.next();
                         num_char_vec.push(num_char);
                     } else {
