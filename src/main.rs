@@ -1,9 +1,12 @@
-use std::{char, env};
+use std::{char, env, iter::Peekable, str::Chars};
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
     let valid_args = validate_args(args)?;
-    output_assembly_codes(&valid_args[1])
+    match tokenize(&valid_args[1]) {
+        Ok(tokens) => output(tokens),
+        Err(_) => Err("Tokenize error".to_string()),
+    }
 }
 
 fn validate_args(args: Vec<String>) -> Result<Vec<String>, String> {
@@ -14,17 +17,46 @@ fn validate_args(args: Vec<String>) -> Result<Vec<String>, String> {
     Ok(args)
 }
 
-// TODO: Add test
-fn output_assembly_codes(input: &str) -> Result<(), String> {
-    println!(".intel_syntax noprefix");
-    println!(".globl main");
-    println!("main:");
-    output_add_or_sub_codes(input)
+#[derive(Debug)]
+pub enum TokenKind {
+    Plus,
+    Minus,
+    Number(u32),
 }
 
-fn output_add_or_sub_codes(input: &str) -> Result<(), String> {
-    let mut char_vec: Vec<char> = Vec::new();
+pub enum TokenizeError {
+    UnexpectedToken
+}
+
+pub fn tokenize(input: &String) -> Result<Vec<TokenKind>, TokenizeError> {
+    let mut tokens: Vec<TokenKind> = Vec::new();
     let mut chars = (*input).chars().peekable();
+    while let Some(&c) = chars.peek() {
+        match c {
+            ' ' => {
+                chars.next();
+            }
+            '+' => {
+                chars.next();
+                tokens.push(TokenKind::Plus);
+            }
+            '-' => {
+                chars.next();
+                tokens.push(TokenKind::Minus);
+            }
+            '0'..'9' => match tokenize_number(&mut chars) {
+                Ok(token) => tokens.push(token),
+                Err(err) => return Err(err),
+            },
+            _ => return Err(TokenizeError::UnexpectedToken),
+        }
+    }
+
+    Ok(tokens)
+}
+
+fn tokenize_number(chars: &mut Peekable<Chars>) -> Result<TokenKind, TokenizeError> {
+    let mut char_vec: Vec<char> = Vec::new();
     while let Some(&c) = chars.peek() {
         if c.is_ascii_digit() {
             chars.next();
@@ -33,42 +65,46 @@ fn output_add_or_sub_codes(input: &str) -> Result<(), String> {
             break;
         }
     }
-    let num = char_vec.iter().collect::<String>();
-    println!("  mov rax, {:?}", (*num).parse::<u32>().unwrap());
+    let number = char_vec.iter().collect::<String>().parse::<u32>().unwrap();
 
-    while let Some(&c) = chars.peek() {
-        match c {
-            '+' => {
-                chars.next();
-                let mut num_char_vec: Vec<char> = Vec::new();
-                while let Some(&num_char) = chars.peek() {
-                    if num_char.is_ascii_digit() {
-                        chars.next();
-                        num_char_vec.push(num_char);
-                    } else {
-                        break;
+    Ok(TokenKind::Number(number))
+}
+
+fn output(tokens: Vec<TokenKind>) -> Result<(), String> {
+    println!(".intel_syntax noprefix");
+    println!(".globl main");
+    println!("main:");
+
+    let mut tokens = tokens.iter().peekable();
+    while let Some(&token) = tokens.peek() {
+        match *token {
+            TokenKind::Plus => {
+                tokens.next();
+                match tokens.peek() {
+                    Some(&TokenKind::Number(number)) => {
+                        tokens.next();
+                        println!("  add rax, {:?}", *number);
                     }
+                    _ => return Err("The token following + operator is not a number".to_string()),
                 }
-                let num = num_char_vec.iter().collect::<String>();
-                println!("  add rax, {:?}", num.parse::<u32>().unwrap());
             }
-            '-' => {
-                chars.next();
-                let mut num_char_vec: Vec<char> = Vec::new();
-                while let Some(&num_char) = chars.peek() {
-                    if num_char.is_ascii_digit() {
-                        chars.next();
-                        num_char_vec.push(num_char);
-                    } else {
-                        break;
+            TokenKind::Minus => {
+                tokens.next();
+                match tokens.peek() {
+                    Some(&TokenKind::Number(number)) => {
+                        tokens.next();
+                        println!("  sub rax, {:?}", *number);
                     }
+                    _ => return Err("The token following - operator is not a number".to_string()),
                 }
-                let num = num_char_vec.iter().collect::<String>();
-                println!("  sub rax, {:?}", num.parse::<u32>().unwrap());
             }
-            _ => return Err("unexpected operator".to_string()),
+            TokenKind::Number(number) => {
+                tokens.next();
+                println!("  mov rax, {:?}", number);
+            }
         }
     }
+
     println!("  ret");
 
     Ok(())
