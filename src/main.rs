@@ -7,7 +7,10 @@ fn main() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
     let valid_args = validate_args(args)?;
     match tokenize(&valid_args[1]) {
-        Ok(tokens) => output(tokens),
+        Ok(tokens) => match tokens[0] {
+            TokenKind::Number(_) => output(tokens),
+            _ => return Err("The first token is not number.".to_string()),
+        },
         Err(_) => Err("Tokenize error".to_string()),
     }
 }
@@ -35,7 +38,7 @@ fn output(tokens: Vec<TokenKind>) -> Result<(), String> {
                         tokens.next();
                         println!("  add rax, {:?}", *number);
                     }
-                    _ => return Err("The token following + operator is not a number".to_string()),
+                    _ => return Err("The token following + operator is not number.".to_string()),
                 }
             }
             TokenKind::Minus => {
@@ -45,7 +48,7 @@ fn output(tokens: Vec<TokenKind>) -> Result<(), String> {
                         tokens.next();
                         println!("  sub rax, {:?}", *number);
                     }
-                    _ => return Err("The token following - operator is not a number".to_string()),
+                    _ => return Err("The token following - operator is not number.".to_string()),
                 }
             }
             TokenKind::Number(number) => {
