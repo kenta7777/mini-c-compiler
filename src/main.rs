@@ -9,7 +9,7 @@ fn main() -> Result<(), String> {
     match tokenize(&valid_args[1]) {
         Ok(tokens) => match tokens[0] {
             TokenKind::Number(_) => output(tokens),
-            _ => return Err("The first token is not number.".to_string()),
+            _ => Err("The first token is not number.".to_string()),
         },
         Err(_) => Err("Tokenize error".to_string()),
     }
