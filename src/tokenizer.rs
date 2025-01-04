@@ -1,13 +1,14 @@
 pub mod tokenizer {
     use std::{char, iter::Peekable, str::Chars};
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     pub enum TokenKind {
         Plus,
         Minus,
         Number(u32),
     }
 
+    #[derive(Debug, PartialEq)]
     pub enum TokenizeError {
         UnexpectedToken,
     }
@@ -52,5 +53,39 @@ pub mod tokenizer {
         let number = char_vec.iter().collect::<String>().parse::<u32>().unwrap();
 
         Ok(TokenKind::Number(number))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tokenizer::tokenizer::TokenizeError;
+    use crate::{tokenize, TokenKind};
+
+    #[test]
+    fn test_tokenize_input_string_of_single_number() {
+        let mut tokens = Vec::new();
+        tokens.push(TokenKind::Number(123));
+
+        assert_eq!(tokenize(&"123".to_string()), Ok(tokens));
+    }
+
+    #[test]
+    fn test_tokenize_input_string_of_plus_and_minus_op() {
+        let mut tokens = Vec::new();
+        tokens.push(TokenKind::Number(123));
+        tokens.push(TokenKind::Plus);
+        tokens.push(TokenKind::Number(12));
+        tokens.push(TokenKind::Minus);
+        tokens.push(TokenKind::Number(1));
+
+        assert_eq!(tokenize(&"123 + 12-1".to_string()), Ok(tokens));
+    }
+
+    #[test]
+    fn test_tokenize_returns_error() {
+        assert_eq!(
+            tokenize(&"123 * 2".to_string()),
+            Err(TokenizeError::UnexpectedToken)
+        );
     }
 }
