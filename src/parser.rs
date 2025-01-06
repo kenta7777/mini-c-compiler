@@ -14,14 +14,26 @@ pub mod parser {
         Num,
     }
 
-    pub struct Node {
-        kind: NodeKind,
-        lhs: Box<Node>,
-        rhs: Box<Node>,
-        value: u32
+    pub enum Node {
+        Operator {
+            kind: NodeKind,
+            lhs: Box<Node>,
+            rhs: Box<Node>,
+        },
+        Number {
+            value: u32,
+        },
     }
 
-    fn new_node() {}
+    fn new_node(kind: NodeKind, lhs: Box<Node>, rhs: Box<Node>) -> Box<Node> {
+        let node = Node::Operator {
+            kind: kind,
+            lhs: lhs,
+            rhs: rhs,
+        };
+
+        Box::new(node)
+    }
     fn expr() {}
     fn mul() {}
     fn primary() {}
