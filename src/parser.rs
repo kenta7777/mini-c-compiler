@@ -34,6 +34,12 @@ pub mod parser {
 
         Box::new(node)
     }
+
+    fn new_node_number(number: u32) -> Box<Node> {
+        let node = Node::Number { value: number };
+
+        Box::new(node)
+    }
     fn expr() {}
     fn mul() {}
     fn primary() {}
