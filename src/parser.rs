@@ -6,6 +6,8 @@ primary = num | "(" expr ")"
 */
 
 pub mod parser {
+    use crate::tokenizer::tokenizer::TokenKind;
+
     pub enum NodeKind {
         Add,
         Sub,
@@ -40,7 +42,27 @@ pub mod parser {
 
         Box::new(node)
     }
-    fn expr() {}
-    fn mul() {}
+    fn expr(tokens: Vec<TokenKind>) -> Box<Node> {
+        let node = mul();
+        let mut tokens = tokens.iter().peekable();
+        //TODO: update node recursively
+        while let Some(&token) = tokens.peek() {
+            match *token {
+                TokenKind::Plus => {
+                    let node = new_node(NodeKind::Add, node, mul());
+                }
+                TokenKind::Minus => {
+                    let node = new_node(NodeKind::Sub, node, mul());
+                }
+                _ => return node,
+            }
+        }
+
+        new_node_number(3)
+    }
+
+    fn mul() -> Box<Node> {
+        new_node_number(1)
+    }
     fn primary() {}
 }
